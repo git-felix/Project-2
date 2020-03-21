@@ -1,5 +1,4 @@
 The initial/draft version, ideas, pseudocodes, discussion of problems / difficulties, etc.
-
 1. First of all, the costraints need to be considered:
   Constraint 1: rope’s length is constant => Lrope = Lhorizontal + Lvertical = x1 – x2 + y1 – y3 = const.
                 And thus 𝑥1̈ − 𝑥2̈ + 𝑦1̈ − 𝑦3̈ = 𝑎1 − 𝑎2 − 𝑎3𝑦 = 0
@@ -22,3 +21,5 @@ The initial/draft version, ideas, pseudocodes, discussion of problems / difficul
   4) most probably we have to use 'for' or 'while' loops in order to track all the movements, update the positions, accelerations, etc.
   5) keeping track of the Force at each time period, i.e. F0, F1,..., Fn for t0, t1,..., tn.
   6) dealing with the pully, whether we need to consider it as part of M1 or a separate body M0 with no mass.
+
+After all these points will be considered and finalized, the coding part can be started. The other details will become more clear during the OOP structure creation.
