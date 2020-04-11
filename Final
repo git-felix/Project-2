@@ -1,1 +1,233 @@
+//header file
+#pragma once
+using namespace std;
 
+class Body
+{
+public:
+	Body(int index, double mass, double myu);
+	~Body();
+	//Getters and Setters
+	virtual double get_mass();
+	virtual double get_myu();
+	virtual double get_x();
+	virtual double get_y();
+	virtual double get_v();
+	virtual double get_a();
+	virtual void set_mass(double new_mass);
+	virtual void set_myu(double new_myu);
+	virtual void set_v(double v);
+	virtual void set_a(double a);
+	//Additional functions declaration
+	virtual double* get_pos(Body body);
+	virtual void print_pos(Body body1, Body body2, Body body3);
+	virtual void update_pos(Body body1, Body body2, Body body3, double F, double interval);
+protected:
+	virtual void update_x(double new_x);
+	virtual void update_y(double new_y);
+private:
+	double _mass;	// body mass
+	double _myu;	// friction coefficient
+	double _x;		// x-axis coordinate
+	double _y;		// y-axis coordinate
+	double _v;		// body velocity
+	double _a;		// body acceleration
+};
+
+
+//cpp file
+#include <iostream>
+#include "body.h"
+using namespace std;
+
+/** Constructors and Distructor */
+Body::Body(int index, double mass, double myu)
+{
+	this->set_mass(mass);
+	this->set_myu(myu);
+	this->set_v(0);
+	this->set_a(0);
+	if (index == 1)				// body1 position
+	{
+		this->update_x(10);
+		this->update_y(10);
+	}
+	else if (index == 2)		// body2 position
+	{
+		this->update_x(8);
+		this->update_y(10);
+	}
+	else if (index == 3)		// body3 position
+	{
+		this->update_x(10);
+		this->update_y(8);
+	}
+}
+Body::~Body()
+{
+	this->set_mass(NULL);
+	this->set_myu(NULL);
+	this->update_x(NULL);
+	this->update_y(NULL);
+}
+
+/** Getters */
+double Body::get_mass()
+{
+	return _mass;
+}
+double Body::get_myu()
+{
+	return _myu;
+}
+double Body::get_x()
+{
+	return _x;
+}
+double Body::get_y()
+{
+	return _y;
+}
+double Body::get_v()
+{
+	return _v;
+}
+double Body::get_a()
+{
+	return _a;
+}
+/** Setters */
+void Body::set_mass(double mass)
+{
+	if ((mass > 0 && mass <= 10) || mass == NULL) { _mass = mass; }
+	else if (mass > 10)	{ _mass = 10;	cout << "Body mass exceeded the upper bound, set as 10 kg" << endl; }
+	else if (mass < 0)	{ _mass = 0;	cout << "Body mass exceeded the lower bound, set as 0 kg" << endl; }
+	else { cout << "Error: body mass is out of bounds" << endl; throw std::exception(); }
+}
+void Body::set_myu(double myu)
+{
+	if ((myu >= 0 && myu <= 0.5) || myu == NULL) { _myu = myu; }
+	else if (myu > 0.5)	{ _myu = 0.5;	cout << "Body mass exceeded the upper bound, set as 10 kg" << endl; }
+	else if (myu < 0)	{ _myu = 0;		cout << "Body mass exceeded the lower bound, set as 0 kg" << endl; }
+	else { cout << "Error: friction coefficient is out of bounds" << endl; throw std::exception(); }
+}
+void Body::set_v(double v)
+{
+	_v = v;
+}
+void Body::set_a(double a)
+{
+	_a = a;
+}
+
+/** Position functions update */
+double* Body::get_pos(Body body)
+{
+	static double arr[2];
+	arr[0] = body.get_x();
+	arr[1] = body.get_y();
+	return arr;
+}
+void Body::update_x(double new_x)
+{
+	_x = new_x;
+}
+void Body::update_y(double new_y)
+{
+	_y = new_y;
+}
+
+/** Additional functions definition */
+void Body::print_pos(Body body1, Body body2, Body body3)
+{
+	cout << "[" << body1.get_x() << ", " << body1.get_y() << "]" << "\t";
+	cout << "[" << body2.get_x() << ", " << body2.get_y() << "]" << "\t";
+	cout << "[" << body3.get_x() << ", " << body3.get_y() << "]" << endl;
+}
+
+void Body::update_pos(Body body1, Body body2, Body body3, double F, double interval)
+{
+	int g = 10;
+	double t = 0;
+	double x1 = 0;
+	double x2 = 0;
+	double a1 = (F - (body1.get_myu() * (body1.get_mass() + body2.get_mass()) * g) + (F / abs(F))*(body2.get_myu() * body2.get_mass() * g)) / body1.get_mass();
+	double a23 = (body3.get_myu() * body2.get_mass() * a1 - body3.get_mass() * g) / (body2.get_mass() - body3.get_mass());
+	// we used (F / abs(F)) to understand the direction of F, thus set direction of friction with the right sign
+
+	while (t <= 10)
+	{
+		//accelerations update
+		body1.set_a(a1);
+		body2.set_a(a23);
+		body3.set_a(a23);
+
+		//velocities update
+		body1.set_v(body1.get_v() + a1*interval);
+		body2.set_v(body2.get_v() + a23*t);
+		body3.set_v(body3.get_v() + a23*t);
+
+		//calculate covered distance at each time interval for body1 and body2 with body3
+		x1 = body1.get_v() * interval + body1.get_a() * interval * interval / 2;
+		x2 = body2.get_v() * interval + body2.get_a() * interval * interval / 2;		// we don't calculate the same for body3 as it covers the same distance, which covers body2
+
+		//update bodies' positions after each time interval
+		body1.update_x(body1.get_x() + x1);
+		if (body2.get_x() != body1.get_x() ||					// body2 didn't reach the pulley and can go further
+			body3.get_y() != body1.get_y() ||					// body3 didn't reach the pulley and can go further
+			body3.get_y() != 2)									// body3 didn't reach the bottom and can go further
+		{
+			body2.update_x(body2.get_x() + x2);
+			body3.update_x(body3.get_x() + x1);
+			body3.update_y(body3.get_y() + x2);
+		}
+
+		//print positions
+		cout << "t = " << t << "\t:" << "\t";
+		print_pos(body1, body2, body3);
+
+		t += interval;
+	}
+}
+
+
+//main.cpp
+#include <iostream>
+#include "body.h"
+
+int  main()
+{
+  //you can play with the following ones
+	double F = 200;           //interesting cases with 0, -200, 256
+	double interval = 0.5;
+	double mass1 = 10, mass2 = 3, mass3 = 2;
+	double myu1 = 0.5, myu2 = 0.2, myu3 = 0.1;
+	double *pos;	//pointer to body position
+  //playings are finished
+
+	Body body1 = Body(1, mass1, myu1);
+	Body body2 = Body(2, mass2, myu2);
+	Body body3 = Body(3, mass3, myu3);
+
+	cout << endl << "=== Body1 ===" << endl;
+	cout << "body1 mass : " << body1.get_mass() << " kg" << endl;
+	cout << "body1 myu  : " << body1.get_myu() << endl;
+	pos = body1.get_pos(body1);
+	cout << "body1.get_pos(body1) = [" << pos[0] << ", " << pos[1] << "]" << endl;		//TOBE DELETED - testing: get_pos()
+	
+	cout << endl << "=== Body2 ===" << endl;
+	cout << "body2 mass : " << body2.get_mass() << " kg" << endl;
+	cout << "body2 myu  : " << body2.get_myu() << endl;
+	pos = body2.get_pos(body2);
+
+	cout << endl << "=== Body3 ===" << endl;
+	cout << "body3 mass : " << body3.get_mass() << " kg" << endl;
+	cout << "body3 myu  : " << body3.get_myu() << endl;
+	pos = body3.get_pos(body3);
+
+	cout << endl << "=== Experiment ===" << endl;
+	body1.update_pos(body1, body2, body3, F, interval);
+	
+	system("pause");
+	return 0;
+}
